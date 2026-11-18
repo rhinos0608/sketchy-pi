@@ -3,6 +3,7 @@ import { StringEnum } from "@earendil-works/pi-ai";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { Container, Image, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
+import { registerShowcaseActivation } from "./activation.js";
 import { ACTIONS, ShowcaseCore, type ShowcaseAction, type ShowcaseInput } from "../dist/pi/showcase.js";
 
 const schema = Type.Object({
@@ -36,6 +37,8 @@ export default function (pi: ExtensionAPI) {
 
   pi.registerTool({
     name: "showcase",
+    defaultActive: false,
+    executionMode: "sequential",
     label: "Showcase",
     description,
     promptSnippet: "Draw, edit and display interactive Sketchy diagrams; one tool for diagrams, parts and photo labeling.",
@@ -83,7 +86,7 @@ export default function (pi: ExtensionAPI) {
     },
     renderCall(args, theme) {
       const text = args.action === "sketch" ? (args.scene?.split("\n")[0] ?? "draw scene") :
-        args.action === "edit_sketch" ? "edit drawing" : args.action;
+        args.action === "edit_sketch" ? "edit drawing" : String(args.action);
       return new Text(theme.fg("toolTitle", theme.bold("showcase ")) + theme.fg("muted", text), 0, 0);
     },
     renderResult(result, { expanded, isPartial }, theme, context) {
@@ -112,4 +115,6 @@ export default function (pi: ExtensionAPI) {
       return container;
     },
   });
+
+  registerShowcaseActivation(pi);
 }

@@ -1,7 +1,7 @@
 {
   "name": "@rhinos0608/sketchy-pi",
   "mcpName": "io.github.ddkbs/sketchy",
-  "version": "0.2.0-pi.1",
+  "version": "0.2.0-pi.2",
   "description": "Sketchy drawing engine with one native Pi showcase tool and packaged agent skills; upstream MCP support retained for non-Pi clients.",
   "type": "module",
   "license": "MIT",
@@ -44,7 +44,7 @@
     "build:web": "vite build -c web/vite.config.ts",
     "start": "node dist/index.js",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit && tsc -p viewer/tsconfig.json && tsc -p skill/tsconfig.json && tsc -p web/tsconfig.json && tsc -p claude-code/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc -p viewer/tsconfig.json && tsc -p skill/tsconfig.json && tsc -p web/tsconfig.json && tsc -p claude-code/tsconfig.json && npm run typecheck:pi",
     "preview": "tsx scripts/preview-data.ts && vite",
     "screenshots": "tsx scripts/screenshots.ts",
     "format": "prettier --write .",
@@ -52,10 +52,13 @@
     "pack": "node scripts/pack.mjs",
     "prepublishOnly": "npm run build",
     "prepack": "npm run build",
-    "pack:pi": "mkdir -p release && npm pack --pack-destination release && cd pi/skills && zip -qr ../../release/sketchy-pi-skills.zip ."
+    "pack:pi": "mkdir -p release && npm pack --pack-destination release && cd pi/skills && zip -qr ../../release/sketchy-pi-skills.zip .",
+    "typecheck:pi": "npm run build:server && tsc -p pi/tsconfig.json"
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^2.1.2",
+    "@earendil-works/pi-ai": "1.5.2",
+    "@earendil-works/pi-coding-agent": "1.5.2",
     "@fontsource/caveat": "^5.3.0",
     "@fontsource/kalam": "^5.3.0",
     "@happy-dom/global-registrator": "^21.0.4",
@@ -91,10 +94,10 @@
     "zod": "^4.6.5"
   },
   "peerDependencies": {
-    "@huggingface/transformers": "^4.3.2",
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
+    "@huggingface/transformers": "^4.3.2",
     "typebox": "*"
   },
   "peerDependenciesMeta": {

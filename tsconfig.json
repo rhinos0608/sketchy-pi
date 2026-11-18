@@ -9,8 +9,13 @@
     "noUncheckedIndexedAccess": true,
     "sourceMap": true,
     "skipLibCheck": true,
-    "types": ["node"],
-    "noEmitOnError": true
+    "types": [
+      "node"
+    ],
+    "noEmitOnError": true,
+    "declaration": true
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
