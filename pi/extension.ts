@@ -59,7 +59,7 @@ export default function (pi: ExtensionAPI) {
 
         if (input.action === "choose_model" && !input.tier && ctx.hasUI) {
           const selected = await ctx.ui.select("Choose a local photo-labeling model",
-            ["small (280 MB)", "medium (830 MB)", "large (3.1 GB)", "Cancel"]);
+            ["small (~270 MB)", "medium (~900 MB)", "large (~1.9 GB)", "Cancel"]);
           if (selected && selected !== "Cancel") {
             const tier = selected.split(" ")[0] as "small" | "medium" | "large";
             const ok = await ctx.ui.confirm("Download " + tier + " model?", "The model is stored under ~/.sketchy.");

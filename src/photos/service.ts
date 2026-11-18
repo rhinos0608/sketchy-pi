@@ -6,6 +6,7 @@ import type { Region, SceneImage } from "../scene/types.js";
 import { SceneError } from "../scene/builder.js";
 import { Grounder, type LocateResult, type ProgressEvent } from "./grounding.js";
 import { MODELS, isModelTier, unavailableReason, type ModelTier } from "./models.js";
+import { modelFilesExist } from "./mlx-runtime.js";
 import { USER_AGENT, attributionOf, searchImages, type ImageCandidate } from "./search.js";
 
 const MAX_IMAGE_WIDTH = 1280;
@@ -190,15 +191,14 @@ export class PhotoService {
   chosenTier(): ModelTier | undefined {
     const tier = this.db.getSetting("photo.model");
     if (!isModelTier(tier)) return undefined;
-    // A larger model chosen elsewhere cannot run here; fall back to Small.
-    return unavailableReason(tier) ? "small" : tier;
+    return tier;
   }
 
   modelState(): ModelState {
     if (this.download?.state === "downloading" || this.download?.state === "error")
       return this.download;
     const tier = this.chosenTier();
-    if (tier && this.db.getSetting(`photo.model.${tier}.ready`) === "true")
+    if (tier && modelFilesExist(tier, this.dataDir))
       return { state: "ready", tier };
     return { state: "none" };
   }
@@ -224,9 +224,8 @@ export class PhotoService {
         this.download.progress = Math.max(this.download.progress, Math.min(0.99, loaded / total));
       }
     };
-    Grounder.load(tier, this.dataDir, onProgress)
-      .then((grounder) => {
-        this.grounder = grounder;
+    Grounder.prepare(tier, this.dataDir, onProgress)
+      .then(() => {
         this.db.setSetting(`photo.model.${tier}.ready`, "true");
         this.db.setSetting("photo.model", tier);
         this.download = { state: "ready", tier };

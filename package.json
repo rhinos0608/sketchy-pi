@@ -1,7 +1,7 @@
 {
   "name": "@rhinos0608/sketchy-pi",
   "mcpName": "io.github.ddkbs/sketchy",
-  "version": "0.2.0-pi.2",
+  "version": "0.2.0-pi.3",
   "description": "Sketchy drawing engine with one native Pi showcase tool and packaged agent skills; upstream MCP support retained for non-Pi clients.",
   "type": "module",
   "license": "MIT",
@@ -62,7 +62,6 @@
     "@fontsource/caveat": "^5.3.0",
     "@fontsource/kalam": "^5.3.0",
     "@happy-dom/global-registrator": "^21.0.4",
-    "@huggingface/transformers": "^4.3.2",
     "@types/d3-geo": "^3.1.1",
     "@types/geojson": "^7946.0.16",
     "@types/node": "^26.6.4",
@@ -97,13 +96,9 @@
     "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*",
     "@earendil-works/pi-tui": "*",
-    "@huggingface/transformers": "^4.3.2",
     "typebox": "*"
   },
   "peerDependenciesMeta": {
-    "@huggingface/transformers": {
-      "optional": true
-    },
     "@earendil-works/pi-ai": {
       "optional": true
     },
@@ -134,6 +129,7 @@
     "assets/icon.png",
     "THIRD_PARTY_NOTICES.md",
     "pi",
+    "python",
     "README-PI.md"
   ],
   "publishConfig": {

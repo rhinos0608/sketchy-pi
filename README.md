@@ -83,7 +83,7 @@ Ask _"How is my sketch wired?"_. The AI reads `pinMode`, `digitalWrite` and frie
 
 ### Labeled photos
 
-The AI finds a freely licensed photo (Wikimedia Commons, Openverse), and a vision model **running on your computer** ([Florence-2](https://huggingface.co/microsoft/Florence-2-base-ft)) locates the parts and printed text to label. Attribution is always shown.
+The AI finds a freely licensed photo (Wikimedia Commons, Openverse). In this Pi fork, local **MLX Florence-2** grounds visual parts, and **macOS Vision OCR** finds printed text. This photo-labeling integration requires Apple Silicon. Attribution is always shown.
 
 ![Photo of an Arduino Uno with labeled parts](docs/images/photo.jpg)
 
@@ -139,9 +139,9 @@ The photo-labeling model is **not** part of the download. The first time the AI 
 
 | Model  | Download | Memory  | Notes                                     |
 | ------ | -------- | ------- | ----------------------------------------- |
-| Small  | ~280 MB  | ~1 GB   | Recommended. Printed text, distinct parts |
-| Medium | ~830 MB  | ~2.5 GB | Better grounding of small parts           |
-| Large  | ~3.1 GB  | ~4.5 GB | Most precise                              |
+| Small  | ~270 MB  | ~1 GB   | Florence-2 Base FT, MLX 8-bit             |
+| Medium | ~900 MB  | ~2.5 GB | Florence-2 Large FT, MLX 8-bit            |
+| Large  | ~1.9 GB  | ~4.5 GB | Florence-2 Large FT, MLX BF16             |
 
 ### Claude Code in the terminal
 

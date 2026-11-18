@@ -37,6 +37,6 @@ Incremental action arguments go into payload, preserving the MCP tool's original
     {"action":"add_edge","payload":{"from":"svc","to":"db","label":"reads"}}
     {"action":"render"}
 
-The complete JSON sketch schema is also accepted under payload for action=sketch. For part types and pin names use search_parts with query; for icons use search_icons with query. For photos, find_image with query, locate with image id plus queries array, then sketch with image <id> and label lines. Photo grounding requires a local Florence-2 model chosen with choose_model; downloading requires approval.
+The complete JSON sketch schema is also accepted under payload for action=sketch. For part types and pin names use search_parts with query; for icons use search_icons with query. For photos, find_image with query, locate with image id plus queries array, then sketch with image <id> and label lines. Photo grounding uses local MLX Florence-2 on Apple Silicon (medium: large-ft 8-bit); native Apple Vision supplies OCR boxes. Choose a model with choose_model; downloading requires approval. Once installed, model_status reports readiness.
 
 Never invoke Sketchy MCP tools or start its MCP server in Pi. Use showcase directly.

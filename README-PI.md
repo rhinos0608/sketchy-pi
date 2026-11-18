@@ -34,7 +34,11 @@ While activated, the agent can send the following parameters to the single `show
 
 The tool returns a PNG preview in ~/.sketchy/pi-terminal/ and an offline interactive HTML page in ~/.sketchy/exports/. Pi's tool renderer shows the PNG when supported by the terminal. Interactive HTML adds hover, walkthrough steps, sliders and SVG, PNG and Excalidraw export. Set SKETCHY_OPEN=1 to open every new diagram in the browser or supply open=true for a single call.
 
-Photos are optional. Use find_image, locate and choose_model actions to search freely licensed photos and run the local Florence-2 vision model. The extension asks before downloading any model.
+Photos are optional. Use find_image, locate and choose_model actions to search freely licensed photos and label regions. On Apple Silicon, photo grounding and open-vocabulary detection use a persistent local **MLX-VLM / Florence-2** Python worker, not ONNX or MCP. Printed-text boxes use **macOS Vision OCR**, because the converted medium Florence checkpoint currently generates invalid OCR output. The extension asks before downloading model weights.
+
+The **medium** tier is `mlx-community/Florence-2-large-ft-8bit` (approximately 900 MB). It is stored at `~/.sketchy/models/Florence-2-large-ft-8bit/`, with a private Python 3.12 MLX runtime at `~/.sketchy/mlx/venv/`. The native Vision helper is built to `~/.sketchy/mlx/vision-ocr`. Downloads and compilation are lazy; normal drawings do not start Python or initialize MLX. This photo-labeling backend requires an Apple Silicon Mac. The original non-Pi photo backend is not used in this fork.
+
+Use `showcase` with `action=model_status` to check readiness and `action=locate`, `image=<id>` and `queries=[...]` to label the photo. Once loaded, the MLX worker stays resident for repeated requests; results are saved in SQLite and rendered as JPEG previews.
 
 ## Distribution
 

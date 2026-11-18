@@ -63,12 +63,16 @@ describe("LocalDatabase", () => {
 });
 
 describe("model availability", () => {
-  it("offers only the small model inside Electron", () => {
+  it("allows large MLX models inside Electron on Apple Silicon", () => {
     const electron = { ...process.versions, electron: "41.0.0" };
     const node = { ...process.versions, electron: undefined } as NodeJS.ProcessVersions;
-    expect(unavailableReason("small", electron)).toBeUndefined();
-    expect(unavailableReason("medium", electron)).toMatch(/Claude app/);
-    expect(unavailableReason("large", electron)).toMatch(/Claude app/);
-    expect(unavailableReason("large", node)).toBeUndefined();
+    if (process.platform === "darwin" && process.arch === "arm64") {
+      expect(unavailableReason("small", electron)).toBeUndefined();
+      expect(unavailableReason("medium", electron)).toBeUndefined();
+      expect(unavailableReason("large", electron)).toBeUndefined();
+      expect(unavailableReason("large", node)).toBeUndefined();
+    } else {
+      expect(unavailableReason("medium", electron)).toMatch(/Apple Silicon/);
+    }
   });
 });
