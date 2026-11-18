@@ -1,6 +1,6 @@
-# Original Sketchy compact scene syntax
+# Native Showcase compact scene reference
 
-Draw a whole scene and show it. One element per line:
+Optional reference for advanced diagrams. Pass the lines as the `scene` string to `showcase` with `action="sketch"`; it renders immediately. Use only the features needed for the requested visual. One element per line:
 title <text> | subtitle <text> | dir right|down
 group <id> <label> [in <parent>]
 <id> <label> [@icon] [(cylinder|person|note|circle|rounded|text)] [in <group>] [!accent|!muted] [file=<absolute path>] [~ hover text]
@@ -34,10 +34,66 @@ map <id> [world|europe|africa|asia|middle-east|north-america|south-america|ameri
   <English country name> [fill=<color>|hatch=<color>|!accent] [~ label] | place [name] lat,lon [label] [!accent] | route [name:] <place|lat,lon> -> <place|lat,lon> [--dashed] [~ label]
   In steps: "| m[Germany]" or "m[United-Kingdom]" circles a country, "m[berlin]" a place or route.
 Icons: @globe, @database, @server (Lucide) or @simple-icons:react. Ids: letters, digits, _ or -.
+`file=<absolute path>` is optional and enables local-editor links; it embeds the path in the viewer/export, so omit it from diagrams intended for sharing unless explicitly requested.
+
+# Additional figure families
+
+These are supported by the compact parser but were missing from the previous reference. A figure block continues until a blank line, `end`, or a line belonging to the surrounding scene.
+
+## Plots
+
+```text
+plot p: Function
+x -5..5 Horizontal
+y -5..5 Vertical
+fn x*x ~ Squared
+point 0,0 Origin
+```
+
+Inside `plot`: `x`/`y` ranges and labels; `fn <expression> [~ label]` or `y = <expression>`; `curve <x(t)>, <y(t)> [t <from>..<to>]`; `point <x>,<y> [label]`; `slider <name> <min>..<max> [= value]`; `area <f(x)> <from>..<to>`; `equal`; `vline`/`hline <position> [label]`; `arrow`/`vector <x1>,<y1> -> <x2>,<y2>`. Expressions can use variables and math functions supported by the parser.
+
+## Charts
+
+```text
+chart c bar: Revenue
+series North, South
+x Year
+y Units
+FY25 12 17
+FY26 18 22
+```
+
+`chart <id> <type> [in <group>] [: title]` accepts `bar`, `hbar`, `line`, `area`, `pie`, or `scatter`. Within the block: optional `series <name>, ...`, `x <axis label>`, `y <axis label>`, `unit <text>`, and data rows consisting of a label followed by numbers (or numbers followed by a label). For multi-series rows, supply one value per series.
+
+## Sequence diagrams
+
+```text
+seq s: Request
+actor client Client
+actor api API
+client -> api GET /items
+api --> client 200 OK
+note client,api Request complete
+```
+
+`seq <id> [in <group>] [: title]` supports `actor`/`participant <id> [label] [(person)]`, messages with `->` or dashed `-->`, and `note [over] <actor>[,<actor>]: <text>`.
+
+## Data structures
+
+```text
+array a = 5, 2, 8
+ptr i 1
+stack st = first, second
+queue q = A, B, C
+list linked = one, two, three
+tree t: Binary tree = 8(3(1,6),10(,14))
+```
+
+`array|list|stack|queue <id> [in <group>] [: title] = <values>` accepts comma-separated values or whitespace-separated values. `ptr <name> <zero-based index>` is an optional following line. `tree <id> [in <group>] [: title] = <node>(<left>,<right>)` accepts nested parentheses and empty child positions.
 
 # Follow-up patches
 
-Change the drawing from the last sketch call without resending it. Same line syntax as sketch; prefer this tool for follow-up changes.
+For `action="edit_sketch"`, send only the modified compact lines, rather than the full drawing. This requires an earlier `action="sketch"` with compact syntax in the current scene.
 A line for an id that exists replaces that element; a new id adds one. Arrows are matched by their two ends. Give the whole element line.
 remove <id> | remove <a> -> <b> | remove <drawing>[<shape name or number, counted from 1>] | remove steps
 Inside "draw <id>" lines, named shapes are replaced, an unnamed text with the same words is moved, others are added. Any step line replaces all steps. Other figures are replaced whole.

@@ -56,7 +56,7 @@ describe("persistent-on-demand Showcase context gating", () => {
     for (let i = 0; i < 4; i++) {
       const options = prompt();
       expect(options.selectedTools).toContain("showcase");
-      expect(options.skills).toHaveLength(4);
+      expect(options.skills.map((s) => s.name)).toEqual(["showcase", "other-skill"]);
       expect(pi.getActiveTools()).toContain("showcase");
       events.get("agent_end")?.();
       expect(pi.getActiveTools()).toContain("showcase");

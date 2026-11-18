@@ -1,21 +1,26 @@
 ---
 name: showcase-circuit
-description: Diagram Arduino, ESP32 or sensor wiring from code or a circuit description using native showcase parts, named pins, and automatic wire routing.
+description: Draw a circuit using catalog-backed part types, verified pin names, and connected wires.
+disable-model-invocation: true
 ---
 
-# Showcase a circuit
+# Circuit diagram
 
-Read the source or wiring specification. Use showcase(action="search_parts",query="<part name>") for available catalog types and their exact pin names. Draw with showcase(action="sketch",scene="...") using part and wire lines, or use incremental place_part and connect actions with payload, then render.
+Use when explicitly invoked for a wiring diagram. The native `showcase` tool must first be enabled with `/showcase`.
 
-Example:
+Inspect the circuit specification or code. Call `showcase` with `action="search_parts"` and `query="<part name>"` to verify part types and pin names before drawing. Then use `action="sketch"` with `part` and `wire` lines, or incrementally `place_part`, `connect`, and `render`.
 
-    title Simple circuit
-    dir right
-    part uno arduino-uno
-    part led1 led
-    part r1 resistor value=220
-    wire uno.GND -> led1.C black
+Example: an Arduino-driven LED with a resistor **in series**.
 
-Use real pins found in search results; do not invent names. Use red for power, black for ground, and distinguish other signals. Keep current limiting resistors in series with LEDs. The visual layout must reflect actual circuit logic. Revise with edit_sketch rather than rebuilding unrelated elements.
+```text
+title Arduino LED
+dir right
+part uno arduino-uno
+part r1 resistor value=220
+part led1 led
+wire uno.13 -> r1.1 green
+wire r1.2 -> led1.A green
+wire led1.C -> uno.GND black
+```
 
-The HTML viewer allows SVG, PNG and Excalidraw export.
+Keep actual electrical connectivity faithful to the source. Use catalog pin names or supported aliases, red for supply, black for ground, and distinguish signal wires as useful. A layout rendering successfully does not verify circuit electrical safety or correctness. Revise existing scenes with `edit_sketch`.

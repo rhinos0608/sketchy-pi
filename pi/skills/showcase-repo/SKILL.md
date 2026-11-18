@@ -1,22 +1,28 @@
 ---
 name: showcase-repo
-description: Visualise local repository structure and control flow using native showcase diagrams, grouped code nodes, and file links.
+description: Draw an evidence-based repository architecture or code-flow diagram with native Showcase.
+disable-model-invocation: true
 ---
 
-# Showcase a repository
+# Repository diagram
 
-Inspect actual repo entry points, packages, imports and key execution paths first. Use the single native showcase tool, action="sketch", with grouped modules and directional arrows. For each file-backed node include file=<absolute path> so the standalone viewer can open the correct source file in the configured editor. Add 3–7 steps where a data flow benefits from walkthrough.
+Use when explicitly invoked for a repository visualization. The native `showcase` tool must first be enabled with `/showcase`.
 
-Example:
+Inspect the relevant repository entry points, imports, and execution paths. Diagram only the components supported by those files; label inferred relationships as such rather than presenting them as verified code behavior.
 
-    title Codebase request path
-    dir right
-    group app Application
-    router Router in app file=/absolute/path/router.ts
-    service Service in app file=/absolute/path/service.ts
-    database Database (cylinder)
-    router -> service calls
-    service -> database queries
-    step Dispatch: Router selects handler | router service router->service
+Call `showcase` with `action="sketch"`, using groups for modules and arrows for calls or data flow. For example:
 
-Base the diagram on inspected files rather than invented modules. Subsequent changes use action="edit_sketch". For full grammar consult the showcase skill's references/syntax.md.
+```text
+title Request path
+dir right
+group app Application
+router Router in app
+service Service in app
+database Database (cylinder)
+router -> service dispatches
+service -> database queries
+```
+
+Include `file=<absolute path>` only if the user wants clickable local-editor links. Such paths are embedded in viewer output and may disclose local directory structure if an HTML export is shared. Walkthrough steps are optional, not a fixed requirement.
+
+Use `action="edit_sketch"` for subsequent changes. For nonbasic syntax, see `../showcase/references/syntax.md`.

@@ -2,7 +2,7 @@
 
 This fork runs the original Sketchy scene parser, layout engine, part catalog, rasterizer and interactive HTML viewer **directly inside Pi**. It does not start, connect to or require an MCP server.
 
-Sketchy registers exactly **one** native Pi tool, **showcase**, but keeps it **out of the model's active tool list and system prompt by default**. `/showcase` enables it for the current Pi session until explicitly disabled. Its action parameter groups the original Sketchy tool operations into one API; three packaged skills cover diagrams, repository architecture and circuits. Their skill metadata is also absent from ordinary agent prompts.
+Sketchy registers exactly **one** native Pi tool, **showcase**, but keeps it **out of the model's active tool list and system prompt by default**. `/showcase` enables it for the current Pi session until explicitly disabled. Its action parameter groups the drawing operations into one API. Only the main `showcase` skill is advertised to the model after activation; the two specialist skills remain available through explicit `/skill:showcase-repo` and `/skill:showcase-circuit` commands. None of their metadata is included before activation.
 
 ## Install
 
@@ -48,7 +48,7 @@ This builds the engine and creates an installable npm/Pi package tarball and a Z
 
     pi install /Users/rhinesharar/sketchy-pi/release/<name>.tgz
 
-The ZIP is an optional portable skills bundle; native Pi package discovery uses pi/skills/ directly.
+The ZIP is an optional portable skills bundle; native Pi package discovery uses pi/skills/ directly. The specialist skills set `disable-model-invocation: true`: Pi can still run them with `/skill:showcase-repo` and `/skill:showcase-circuit` after `/showcase` enables the native tool, but will not automatically load or advertise them. The advanced syntax reference is read only when needed.
 
 ## Architecture
 

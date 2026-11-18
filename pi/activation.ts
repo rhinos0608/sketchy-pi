@@ -1,7 +1,8 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 
 const TOOL = "showcase";
-const SKILLS = new Set(["showcase", "showcase-repo", "showcase-circuit"]);
+const PRIMARY_SKILL = "showcase";
+const EXPLICIT_SKILLS = new Set(["showcase-repo", "showcase-circuit"]);
 
 /**
  * Opt-in for the duration of the Pi session, not for just one agent turn.
@@ -41,9 +42,11 @@ export function registerShowcaseActivation(pi: ExtensionAPI): void {
     } else if (!shouldDeclare && isDeclared) {
       options.selectedTools = options.selectedTools.filter((name) => name !== TOOL);
     }
-    if (!enabled || !active) {
-      options.skills = options.skills.filter((skill) => !SKILLS.has(skill.name));
-    }
+    // Specialist skills remain usable via /skill:name, but never enter the
+    // model skill index. Keep only the main Showcase metadata when enabled.
+    options.skills = options.skills.filter((skill) =>
+      !EXPLICIT_SKILLS.has(skill.name) && (shouldDeclare || skill.name !== PRIMARY_SKILL),
+    );
   });
 
   pi.registerCommand("showcase", {
