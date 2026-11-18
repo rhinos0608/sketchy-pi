@@ -21,3 +21,6 @@ CLAUDE.md
 
 # Types the Claude Code engine writes beside a loaded plugin
 claude-code/.claude-plugin/types/
+
+# Native Pi release packages
+release/

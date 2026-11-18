@@ -6,6 +6,16 @@ The AI decides **what** to draw and label. Sketchy decides **where**: a part lib
 
 ![Sketchy in a chat: the answer to "What happens when I open a web page?" comes with an interactive drawing and its toolbar (Draw, SVG, PNG, Excalidraw)](docs/images/chat.png)
 
+## Pi coding agent (native extension)
+
+**This fork adds Pi support without MCP.** The single native tool named \`showcase\` wraps the original Sketchy drawing, editing, part catalog and photo actions. Interactive HTML exports and image previews work locally; the package ships three Pi skills.
+
+See [Pi installation, examples and packaging](README-PI.md). Quick install after \`npm ci && npm run build\`:
+
+\`\`\`sh
+pi install /Users/rhinesharar/sketchy-pi
+\`\`\`
+
 ## What it can draw
 
 ### Systems, step by step

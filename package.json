@@ -1,22 +1,26 @@
 {
-  "name": "@ddkbs/sketchy",
+  "name": "@rhinos0608/sketchy-pi",
   "mcpName": "io.github.ddkbs/sketchy",
-  "version": "0.2.0",
-  "description": "Lets your AI assistant draw while it explains: hand-drawn, interactive diagrams, circuits and labeled photos in the Claude chat, Claude Code, Cursor and VS Code.",
+  "version": "0.2.0-pi.1",
+  "description": "Sketchy drawing engine with one native Pi showcase tool and packaged agent skills; upstream MCP support retained for non-Pi clients.",
   "type": "module",
   "license": "MIT",
   "author": "ddkbs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ddkbs/sketchy.git"
+    "url": "git+https://github.com/rhinos0608/sketchy-pi.git"
   },
-  "homepage": "https://github.com/ddkbs/sketchy#readme",
+  "homepage": "https://github.com/rhinos0608/sketchy-pi#readme",
   "bugs": {
-    "url": "https://github.com/ddkbs/sketchy/issues"
+    "url": "https://github.com/rhinos0608/sketchy-pi/issues"
   },
   "keywords": [
-    "mcp",
-    "model-context-protocol",
+    "pi-package",
+    "pi-coding-agent",
+    "native-extension",
+    "showcase",
+    "skills",
+    "diagrams",
     "mcp-apps",
     "claude",
     "claude-code",
@@ -46,7 +50,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "pack": "node scripts/pack.mjs",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "prepack": "npm run build",
+    "pack:pi": "mkdir -p release && npm pack --pack-destination release && cd pi/skills && zip -qr ../../release/sketchy-pi-skills.zip ."
   },
   "devDependencies": {
     "@anthropic-ai/mcpb": "^2.1.2",
@@ -85,10 +91,26 @@
     "zod": "^4.6.5"
   },
   "peerDependencies": {
-    "@huggingface/transformers": "^4.3.2"
+    "@huggingface/transformers": "^4.3.2",
+    "@earendil-works/pi-ai": "*",
+    "@earendil-works/pi-coding-agent": "*",
+    "@earendil-works/pi-tui": "*",
+    "typebox": "*"
   },
   "peerDependenciesMeta": {
     "@huggingface/transformers": {
+      "optional": true
+    },
+    "@earendil-works/pi-ai": {
+      "optional": true
+    },
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    },
+    "@earendil-works/pi-tui": {
+      "optional": true
+    },
+    "typebox": {
       "optional": true
     }
   },
@@ -107,9 +129,19 @@
     "LICENSE",
     "README.md",
     "assets/icon.png",
-    "THIRD_PARTY_NOTICES.md"
+    "THIRD_PARTY_NOTICES.md",
+    "pi",
+    "README-PI.md"
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "pi": {
+    "extensions": [
+      "./pi/extension.ts"
+    ],
+    "skills": [
+      "./pi/skills"
+    ]
   }
 }
