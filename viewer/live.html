@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Showcase — Live workspace</title>
+    <style>
+      :root, :root body { background: #f1eee6; }
+      body { min-height: 100vh; padding: 18px 22px 70px; }
+      .live-shell { max-width: 1380px; margin: auto; }
+      .live-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+      .live-header h1 { font-size: 25px; margin: 0; font-weight:700; }
+      .live-header p { margin:2px 0 0; color:var(--ink-soft); font-size:14px; }
+      #live-status { border: 1px solid #d2c9b7; background: #fffdf7; padding:6px 12px; border-radius:12px; font-size:14px; }
+      #app { margin: 0 auto; max-width: 1300px; min-height: 170px; }
+      .live-empty { min-height:250px; border:2px dashed #cec5af; border-radius:12px; display:grid; place-content:center; text-align:center; padding:30px; color:var(--ink-soft); }
+      .live-refine { margin:20px auto 0; padding:16px; border:1px solid #e7e2d6; border-radius:14px; background:#fffdf7; }
+      .live-refine label { display:block; font-size:17px; font-weight:700; margin-bottom:8px; }
+      .live-refine-row { display:flex; gap:10px; align-items:stretch; }
+      #refine-text { flex:1; min-width:0; font:inherit; padding:10px 12px; resize:vertical; min-height:75px; border:1px solid #d2c9b7; border-radius:9px; background:white; }
+      #refine-send { flex-shrink:0; padding:0 19px; }
+      #refine-status { font-size:14px; margin:10px 0 0; color:var(--ink-soft); min-height:1.2em; }
+      .live-hint { color:var(--ink-soft); font-size:13px; margin-top:8px; }
+      @media(max-width:650px) {
+        body {padding:12px 10px 40px;}
+        .live-refine-row {flex-direction:column;}
+        #refine-send {padding:10px;}
+      }
+    </style>
+  </head>
+  <body>
+    <div class="live-shell">
+      <header class="live-header">
+        <div>
+          <h1>Showcase · Live</h1>
+          <p>One workspace — redraws appear here as Pi refines the scene</p>
+        </div>
+        <span id="live-status" role="status">Connecting…</span>
+      </header>
+      <main id="app"><div class="live-empty">Waiting for a Showcase drawing from Pi…</div></main>
+      <form class="live-refine" id="refine-form">
+        <label for="refine-text">Refine this diagram with Pi</label>
+        <div class="live-refine-row">
+          <textarea id="refine-text" maxlength="4000" placeholder="E.g. Group the services by layer, add the cache, and show a request walkthrough."></textarea>
+          <button type="submit" id="refine-send">Send to Pi</button>
+        </div>
+        <p id="refine-status" role="status"></p>
+        <div class="live-hint">Edits appear here automatically. You can also draw annotations on the diagram and use “Send to AI” to include them.</div>
+      </form>
+    </div>
+    <script type="module" src="./src/live.ts"></script>
+  </body>
+</html>

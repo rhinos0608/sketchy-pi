@@ -5,35 +5,62 @@ import { Container, Image, Text } from "@earendil-works/pi-tui";
 import { Type } from "typebox";
 import { registerShowcaseActivation } from "./activation.js";
 import { ACTIONS, ShowcaseCore, type ShowcaseAction, type ShowcaseInput } from "../dist/pi/showcase.js";
+import { LiveShowcase, type RefineRequest } from "../dist/pi/live.js";
 
 const schema = Type.Object({
-  action: StringEnum(ACTIONS, { description: "Sketchy operation (the original MCP operation name)." }),
+  action: StringEnum(ACTIONS, { description: "Native Showcase operation; sketch and edit_sketch publish into the live browser workspace." }),
   scene: Type.Optional(Type.String({ description: "Whole scene in Sketchy's compact line syntax for action=sketch." })),
   changes: Type.Optional(Type.String({ description: "Compact patch syntax for action=edit_sketch; supports remove <id>." })),
   query: Type.Optional(Type.String({ description: "Search query for search_parts, search_icons, find_image." })),
-  payload: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "Named arguments from the original operation. For sketch, the JSON scene. For incremental actions, the original MCP tool parameters (id, label, from, to, etc)." })),
+  payload: Type.Optional(Type.Record(Type.String(), Type.Unknown(), { description: "JSON scene for sketch, or named arguments for incremental actions (id, label, from, to, etc)." })),
   image: Type.Optional(Type.String({ description: "Photo id from find_image for locate/add_image." })),
   queries: Type.Optional(Type.Array(Type.String(), { minItems: 1, maxItems: 12, description: "Photo regions to locate." })),
   min_width: Type.Optional(Type.Integer({ minimum: 1, description: "Minimum photo width for find_image." })),
   tier: Type.Optional(StringEnum(["small", "medium", "large"] as const, { description: "Photo model tier." })),
-  open: Type.Optional(Type.Boolean({ description: "Open the interactive HTML page in the browser; the image preview also appears in Pi where supported." })),
+  open: Type.Optional(Type.Boolean({ description: "Open or keep the live localhost workspace in the browser. Sketch edits update that same page automatically." })),
+
 });
 
 const description = [
   "Direct native Pi tool for Sketchy drawings; NO MCP server or adapter. When this tool appears in your callable tools, invoke showcase directly. Pi tool_search only indexes deferred/codemode tools, so it will NEVER find this direct tool.",
   "Use action=sketch and scene=compact Sketchy lines to draw in one call, then action=edit_sketch with changes for follow-ups.",
-  "Or use action=new_scene, add_box/add_node/add_text/add_group/add_arrow/add_edge/place_part/connect/label/add_step/add_image with payload matching the named parameters of each original Sketchy MCP tool, then action=render.",
+  "For incremental drawing, use new_scene and add_node/add_edge/add_group/place_part/connect/label/add_step with payload, then action=render to publish the updated browser scene.",
   "Use action=sketch with payload for the original JSON sketch schema (nodes, edges, groups, parts, wires, labels, steps).",
   "Discovery: search_parts/search_icons/find_image use query; locate uses image+queries; model_status/choose_model/download_model manage local photo labeling.",
-  "Pi shows a PNG preview; a standalone interactive HTML page provides hover, steps, sliders and SVG/PNG/Excalidraw export.",
+  "Showcase runs a live localhost browser workspace. Every sketch/edit_sketch/render updates the same page in real time with hover, steps, sliders, annotated feedback, and SVG/PNG/Excalidraw export. The browser can send refinement requests back to this Pi session.",
   "Compact example: title Web request\\ndir right\\nbrowser Browser @globe\\napi API @server\\ndb Database (cylinder)\\nbrowser -> api HTTPS\\napi -> db query\\nstep Request: Browser talks to API | browser api browser->api",
 ].join("\n");
 
 export default function (pi: ExtensionAPI) {
-  let core = new ShowcaseCore({ openDefault: process.env.SKETCHY_OPEN === "1" });
-  pi.on("session_start", () => {
-    core = new ShowcaseCore({ openDefault: process.env.SKETCHY_OPEN === "1" });
+  function createLive(): LiveShowcase {
+    return new LiveShowcase({
+      onRefine: async ({ text, image }: RefineRequest) => {
+        if (!pi.getActiveTools().includes("showcase")) {
+          throw new Error("Showcase is disabled in Pi. Run /showcase to re-enable it.");
+        }
+        const prompt = "Message from the live Showcase browser for the current drawing: " + text +
+          "\nIf the user requests a change, update the existing live browser scene using showcase " +
+          "action=edit_sketch for compact scenes, or the appropriate native action for other scenes. " +
+          "Keep unrelated elements intact; answer questions normally when no change is requested.";
+        if (image) {
+          pi.sendUserMessage([
+            { type: "text", text: prompt },
+            { type: "image", data: image, mimeType: "image/png" },
+          ]);
+        } else {
+          pi.sendUserMessage(prompt);
+        }
+      },
+    });
+  }
+  let live = createLive();
+  let core = new ShowcaseCore({ live, openDefault: process.env.SKETCHY_OPEN !== "0" });
+  pi.on("session_start", async () => {
+    await live.close();
+    live = createLive();
+    core = new ShowcaseCore({ live, openDefault: process.env.SKETCHY_OPEN !== "0" });
   });
+  pi.on("session_shutdown", async () => { await live.close(); });
 
   pi.registerTool({
     name: "showcase",
@@ -41,7 +68,7 @@ export default function (pi: ExtensionAPI) {
     executionMode: "sequential",
     label: "Showcase",
     description,
-    promptSnippet: "Directly callable native Showcase tool for diagrams and photo labeling. Do not try to discover it with tool_search.",
+    promptSnippet: "Draw and iteratively refine in the live localhost Showcase browser; sketch/edit_sketch/render update one persistent interactive page.",
     parameters: schema,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       if (signal?.aborted) return { content: [{ type: "text", text: "Cancelled." }], details: { cancelled: true } };
@@ -116,5 +143,8 @@ export default function (pi: ExtensionAPI) {
     },
   });
 
-  registerShowcaseActivation(pi);
+  registerShowcaseActivation(pi, {
+    onEnable: () => process.env.SKETCHY_OPEN === "0" ? live.ensure() : live.open(),
+    onView: () => live.open(true),
+  });
 }

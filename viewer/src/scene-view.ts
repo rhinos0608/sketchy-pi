@@ -34,8 +34,9 @@ export interface Host {
   ask?(message: { text: string; image?: string }): Promise<boolean>;
 }
 
-export function mountScene(root: HTMLElement, scene: LaidOutScene, host: Host): void {
+export function mountScene(root: HTMLElement, scene: LaidOutScene, host: Host): () => void {
   root.replaceChildren();
+  const controller = new AbortController();
   const frame = div("frame");
   const canvas = div("canvas");
   const tooltip = div("tooltip");
@@ -54,10 +55,10 @@ export function mountScene(root: HTMLElement, scene: LaidOutScene, host: Host): 
   canvas.appendChild(rendered.svg);
   const annotator = createAnnotator(rendered.svg, frame);
   frame.append(toolbar(scene, rendered, host, annotator, frame), canvas);
-  frame.appendChild(drawbar(scene, rendered, host, annotator, frame));
+  frame.appendChild(drawbar(scene, rendered, host, annotator, frame, controller.signal));
   const sliders = sliderPanel(scene, rendered);
   if (sliders) frame.appendChild(sliders.panel);
-  if (scene.steps.length) frame.appendChild(stepper(scene, rendered, () => sliders?.sync()));
+  if (scene.steps.length) frame.appendChild(stepper(scene, rendered, () => sliders?.sync(), controller.signal));
   frame.appendChild(tooltip);
   root.appendChild(frame);
 
@@ -66,6 +67,12 @@ export function mountScene(root: HTMLElement, scene: LaidOutScene, host: Host): 
   window.addEventListener("sketchy-context", fit);
   void document.fonts.ready.then(() => fitText(rendered.svg));
   wireInteractions(scene, rendered, host, tooltip, frame);
+  return () => {
+    controller.abort();
+    window.removeEventListener("resize", fit);
+    window.removeEventListener("sketchy-context", fit);
+    frame.remove();
+  };
 }
 
 function toolbar(
@@ -129,6 +136,7 @@ function drawbar(
   host: Host,
   annotator: Annotator,
   frame: HTMLElement,
+  signal: AbortSignal,
 ): HTMLElement {
   const bar = div("drawbar");
   const tools = div("drawbar-tools");
@@ -205,7 +213,7 @@ function drawbar(
       annotator.undo();
     }
     if (e.key === "Escape") setDrawing(frame, false);
-  });
+  }, { signal });
   sync();
   return bar;
 }
@@ -281,6 +289,7 @@ function stepper(
   scene: LaidOutScene,
   rendered: RenderedScene,
   onChange: () => void = () => {},
+  signal?: AbortSignal,
 ): HTMLElement {
   const panel = div("stepper");
   const prev = button("‹", "Previous step", () => go(-1));
@@ -337,14 +346,14 @@ function stepper(
     show();
   };
   document.addEventListener("keydown", (e) => {
-    if (e.target instanceof HTMLInputElement) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
     if (e.key === "ArrowRight") go(1);
     if (e.key === "ArrowLeft") go(-1);
     if (e.key === "Escape") {
       index = undefined;
       show();
     }
-  });
+  }, { signal });
   show();
   return panel;
 }

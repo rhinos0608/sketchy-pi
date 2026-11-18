@@ -14,7 +14,7 @@ export default defineConfig(({ command, mode }) => ({
     target: "es2022",
     assetsInlineLimit: Number.MAX_SAFE_INTEGER,
     rollupOptions: {
-      input: mode === "standalone" ? "viewer/standalone.html" : "viewer/viewer.html",
+      input: mode === "live" ? "viewer/live.html" : mode === "standalone" ? "viewer/standalone.html" : "viewer/viewer.html",
     },
   },
 }));

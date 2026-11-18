@@ -6,7 +6,7 @@ type PromptOptions = {
   skills: { name: string; description: string }[];
 };
 
-function mockPi() {
+function mockPi(browser?: { onEnable: () => Promise<string>; onView: () => Promise<string> }) {
   const events = new Map<string, (...args: any[]) => void>();
   const commands = new Map<string, { handler: (args: string, ctx: any) => Promise<void> }>();
   let active = ["read", "bash", "edit"];
@@ -21,7 +21,7 @@ function mockPi() {
     setActiveTools: (names: string[]) => { active = [...names]; },
     sendUserMessage: (message: string) => { messages.push(message); },
   };
-  registerShowcaseActivation(pi as any);
+  registerShowcaseActivation(pi as any, browser);
   function prompt(): PromptOptions {
     const systemPromptOptions: PromptOptions = {
       selectedTools: ["read", "bash", "showcase", "edit"],
@@ -96,6 +96,20 @@ describe("persistent-on-demand Showcase context gating", () => {
     expect(prompt().selectedTools).not.toContain("showcase");
     await command("status");
     expect(notifications.at(-1)).toContain("inactive (no model schema)");
+  });
+
+  it("opens the browser on activation and reopens it on explicit /showcase view", async () => {
+    const opens: string[] = [];
+    const { command, messages, pi } = mockPi({
+      onEnable: async () => { opens.push("initial"); return "http://127.0.0.1:12345"; },
+      onView: async () => { opens.push("again"); return "http://127.0.0.1:12345"; },
+    });
+    await command("");
+    expect(opens).toEqual(["initial"]);
+    await command("view");
+    expect(opens).toEqual(["initial", "again"]);
+    expect(messages).toEqual([]);
+    expect(pi.getActiveTools()).toContain("showcase");
   });
 
   it("reconciles an aggressive tools-manager without disabling other tools", async () => {

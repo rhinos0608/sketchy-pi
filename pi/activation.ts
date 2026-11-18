@@ -9,7 +9,10 @@ const EXPLICIT_SKILLS = new Set(["showcase-repo", "showcase-circuit"]);
  * Only active direct tools are declared to the model. A registered but inactive
  * direct tool cannot be discovered by tool_search (which indexes deferred tools).
  */
-export function registerShowcaseActivation(pi: ExtensionAPI): void {
+export function registerShowcaseActivation(
+  pi: ExtensionAPI,
+  browser?: { onEnable: () => Promise<string>; onView: () => Promise<string> },
+): void {
   let enabled = false;
 
   function syncTool(): boolean {
@@ -50,7 +53,7 @@ export function registerShowcaseActivation(pi: ExtensionAPI): void {
   });
 
   pi.registerCommand("showcase", {
-    description: "Enable Showcase for this session; /showcase off disables, /showcase status checks",
+    description: "Enable Showcase and its live browser workspace; /showcase view reopens, /showcase off disables",
     handler: async (args, ctx) => {
       const request = args.trim();
       if (request === "status") {
@@ -74,10 +77,20 @@ export function registerShowcaseActivation(pi: ExtensionAPI): void {
         if (ctx.hasUI) ctx.ui.notify("Showcase could not be enabled; check Pi's tool allowlist.", "warning");
         return;
       }
-      if (request && request !== "on") {
-        pi.sendUserMessage("Use the native showcase tool for this request: " + request);
-      } else if (ctx.hasUI) {
-        ctx.ui.notify("Showcase enabled for this session. /showcase off disables it.", "info");
+      try {
+        const url = request === "view" ? await browser?.onView() : await browser?.onEnable();
+        if (request === "view") {
+          if (ctx.hasUI) ctx.ui.notify(url ? "Live Showcase: " + url : "Live viewer unavailable.", "info");
+        } else if (request && request !== "on") {
+          pi.sendUserMessage("Use the native showcase tool for this request: " + request);
+        } else if (ctx.hasUI) {
+          ctx.ui.notify("Showcase enabled for this session. Live workspace: " + (url ?? "unavailable"), "info");
+        }
+      } catch (error) {
+        if (ctx.hasUI) ctx.ui.notify("Showcase enabled, but browser could not open: " + String(error), "warning");
+        if (request && request !== "on" && request !== "view") {
+          pi.sendUserMessage("Use the native showcase tool for this request: " + request);
+        }
       }
     },
   });

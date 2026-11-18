@@ -7,7 +7,7 @@ description: Native Showcase diagram syntax and editing guidance. Use when the u
 
 Use the native `showcase` tool when a diagram is requested. Activation with `/showcase` makes the tool available; it does not itself require a drawing in every subsequent reply.
 
-For a new diagram, call `showcase` with `action="sketch"` and a newline-delimited `scene`. This creates and renders the scene in one call. Start with these compact forms:
+For a new diagram, call `showcase` with `action="sketch"` and a newline-delimited `scene`. This creates the drawing in the **live localhost browser workspace**; the same page updates with each subsequent edit. Start with these compact forms:
 
 ```text
 title Web request
@@ -21,6 +21,6 @@ For changes to that scene, use `action="edit_sketch"` with `changes` containing 
 
 For basic diagrams, the syntax above is sufficient. Read `references/syntax.md` only when the requested visual needs groups, steps, drawings, plots, data structures, maps, circuits, or other advanced syntax.
 
-The tool also supports a JSON scene through `action="sketch", payload={...}` and incremental edits through actions such as `add_node` and `add_edge` followed by `render`; see its tool schema for arguments. Set `open=true` only when the interactive page is wanted.
+The tool also supports a JSON scene through `action="sketch", payload={...}` and incremental edits through actions such as `add_node` and `add_edge` followed by `render`; see its tool schema for arguments. The browser can send follow-up instructions or annotated PNGs directly back to Pi; apply those changes to the same scene. `/showcase view` reopens the browser. SVG, PNG and Excalidraw exports remain available from the viewer.
 
 For a requested photographic illustration, `find_image` searches reusable photos and `locate` identifies regions with the local vision backend. Selecting or downloading a model requires user approval.

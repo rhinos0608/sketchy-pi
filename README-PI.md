@@ -32,7 +32,7 @@ While activated, the agent can send the following parameters to the single `show
     {"action":"add_node","payload":{"id":"api","label":"API"}}
     {"action":"render","open":true}
 
-The tool returns a PNG preview in ~/.sketchy/pi-terminal/ and an offline interactive HTML page in ~/.sketchy/exports/. Pi's tool renderer shows the PNG when supported by the terminal. Interactive HTML adds hover, walkthrough steps, sliders and SVG, PNG and Excalidraw export. Set SKETCHY_OPEN=1 to open every new diagram in the browser or supply open=true for a single call.
+Showcase starts an **interactive localhost browser workspace** when `/showcase` is enabled, on a free port bound to `127.0.0.1`. `/showcase view` reopens the browser. The workspace remains open across prompts: `sketch`, `edit_sketch` and `render` update the existing drawing through server-sent events without reloading the page. The browser's refinement box sends instructions back to the Pi agent; its annotation tools can send marked-up screenshots as part of the request. Walkthroughs, sliders and SVG/PNG/Excalidraw export still work. The server stops on session shutdown/reload. Set `SKETCHY_OPEN=0` to suppress automatic browser opening after render (use `/showcase view` to open explicitly); set `SKETCHY_TERMINAL_PREVIEW=1` to opt back into PNG previews in the terminal.
 
 Photos are optional. Use find_image, locate and choose_model actions to search freely licensed photos and label regions. On Apple Silicon, photo grounding and open-vocabulary detection use a persistent local **MLX-VLM / Florence-2** Python worker, not ONNX or MCP. Printed-text boxes use **macOS Vision OCR**, because the converted medium Florence checkpoint currently generates invalid OCR output. The extension asks before downloading model weights.
 
@@ -52,7 +52,9 @@ The ZIP is an optional portable skills bundle; native Pi package discovery uses 
 
 ## Architecture
 
-- src/pi/showcase.ts — native action dispatcher and controller; no MCP import.
+- src/pi/showcase.ts — native action dispatcher and controller; publishes updated scenes to the browser.
+- src/pi/live.ts — loopback-only HTTP/SSE server, same-origin browser-to-Pi refinement bridge.
+- viewer/src/live.ts and viewer/live.html — live browser interface reusing the interactive renderer and annotation tools.
 - pi/extension.ts — single tool registration, sequential scene execution and Pi terminal UI.
 - pi/activation.ts — session-scoped, opt-in tool and skill-prompt activation, with explicit off/status commands. The native direct tool defaults to inactive.
 - pi/skills/ — Pi Agent Skills.

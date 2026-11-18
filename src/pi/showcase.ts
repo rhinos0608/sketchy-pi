@@ -4,6 +4,7 @@ import { z } from "zod";
 import { figureIssues } from "../figures/index.js";
 import { suggestIcons } from "../icons.js";
 import { layoutScene, previousLayout, type PreviousLayout } from "../layout/index.js";
+import type { LiveShowcase } from "./live.js";
 import { parseEditor } from "../layout/links.js";
 import { PartIndex } from "../parts/index.js";
 import { MODELS, isModelTier, unavailableReason } from "../photos/models.js";
@@ -58,10 +59,12 @@ export class ShowcaseCore {
   private photos?: PhotoService;
   private dataDir: string;
   private openDefault: boolean;
+  private live?: LiveShowcase;
 
-  constructor(config: { dataDir?: string; openDefault?: boolean } = {}) {
+  constructor(config: { dataDir?: string; openDefault?: boolean; live?: LiveShowcase } = {}) {
     this.dataDir = config.dataDir ?? defaultDataDir();
     this.openDefault = config.openDefault ?? false;
+    this.live = config.live;
   }
 
   private async getBuilder(): Promise<SceneBuilder> {
@@ -198,8 +201,17 @@ export class ShowcaseCore {
       editor: parseEditor(process.env.SKETCHY_EDITOR),
       previous: this.lastLayout,
     });
-    const data = await terminalFiles(join(this.dataDir, "pi-terminal"),
-      standaloneFiles(join(this.dataDir, "exports"), open ?? this.openDefault))(layout);
+    // Pi uses a persistent browser workspace. PNG files are optional instead
+    // of being the primary output. Non-Pi consumers retain the static fallback.
+    const data = this.live
+      ? (process.env.SKETCHY_TERMINAL_PREVIEW === "1"
+        ? await terminalFiles(join(this.dataDir, "pi-terminal"))(layout)
+        : { images: [] as string[], page: undefined as string | undefined })
+      : await terminalFiles(join(this.dataDir, "pi-terminal"),
+          standaloneFiles(join(this.dataDir, "exports"), open ?? this.openDefault))(layout);
+    const page = this.live
+      ? await this.live.publish(layout, { open: open ?? this.openDefault })
+      : data.page;
     this.lastLayout = previousLayout(layout);
     const s = b.scene;
     const counts = [
@@ -210,10 +222,10 @@ export class ShowcaseCore {
     const summary = counts.filter(([n]) => n > 0).map(([n, name]) => n + " " + name).join(", ");
     const issues = figureIssues(s.figures, s.steps).slice(0, 6);
     const text = "Rendered " + (s.title ? JSON.stringify(s.title) + " " : "") + "(" + summary + ").\n" +
-      (data.page ? "Interactive page: " + data.page + "\n" : "") +
+      (page ? (this.live ? "Live browser workspace: " : "Interactive page: ") + page + "\n" : "") +
       (data.images[0] ? "PNG preview: " + data.images[0] + "\n" : "") +
       (issues.length ? "Sketchy noticed: " + issues.join("; ") + "\n" : "") +
-      "The user can see the drawing; explain it briefly.";
-    return { action: "render", text, page: data.page, preview: data.images[0], previewMime: "image/png", images: data.images, issues };
+      (this.live ? "The same browser page updates after each sketch, edit_sketch, or render. The user may also send refinement requests or marked-up images from the browser." : "Explain the drawing briefly.");
+    return { action: "render", text, page, preview: data.images[0], previewMime: "image/png", images: data.images, issues };
   }
 }
