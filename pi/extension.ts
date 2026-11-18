@@ -20,7 +20,7 @@ const schema = Type.Object({
 });
 
 const description = [
-  "Single native Pi tool for Sketchy drawings; NO MCP server or adapter.",
+  "Direct native Pi tool for Sketchy drawings; NO MCP server or adapter. When this tool appears in your callable tools, invoke showcase directly. Pi tool_search only indexes deferred/codemode tools, so it will NEVER find this direct tool.",
   "Use action=sketch and scene=compact Sketchy lines to draw in one call, then action=edit_sketch with changes for follow-ups.",
   "Or use action=new_scene, add_box/add_node/add_text/add_group/add_arrow/add_edge/place_part/connect/label/add_step/add_image with payload matching the named parameters of each original Sketchy MCP tool, then action=render.",
   "Use action=sketch with payload for the original JSON sketch schema (nodes, edges, groups, parts, wires, labels, steps).",
@@ -41,7 +41,7 @@ export default function (pi: ExtensionAPI) {
     executionMode: "sequential",
     label: "Showcase",
     description,
-    promptSnippet: "Draw, edit and display interactive Sketchy diagrams; one tool for diagrams, parts and photo labeling.",
+    promptSnippet: "Directly callable native Showcase tool for diagrams and photo labeling. Do not try to discover it with tool_search.",
     parameters: schema,
     async execute(_toolCallId, params, signal, _onUpdate, ctx) {
       if (signal?.aborted) return { content: [{ type: "text", text: "Cancelled." }], details: { cancelled: true } };

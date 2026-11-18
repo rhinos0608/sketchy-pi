@@ -11,9 +11,12 @@ function mockPi() {
   const commands = new Map<string, { handler: (args: string, ctx: any) => Promise<void> }>();
   let active = ["read", "bash", "edit"];
   const messages: string[] = [];
+  const notifications: string[] = [];
+  const ctx = { hasUI: true, ui: { notify: (text: string) => notifications.push(text) } };
   const pi = {
     on: (name: string, handler: (...args: any[]) => void) => events.set(name, handler),
     registerCommand: (name: string, command: { handler: (args: string, ctx: any) => Promise<void> }) => commands.set(name, command),
+    getAllTools: () => ["read", "bash", "edit", "showcase"].map(name => ({ name })),
     getActiveTools: () => [...active],
     setActiveTools: (names: string[]) => { active = [...names]; },
     sendUserMessage: (message: string) => { messages.push(message); },
@@ -32,11 +35,12 @@ function mockPi() {
     events.get("before_agent_start")!({ systemPromptOptions });
     return systemPromptOptions;
   }
-  return { events, commands, pi, messages, prompt };
+  const command = (args: string) => commands.get("showcase")!.handler(args, ctx);
+  return { events, pi, messages, notifications, prompt, command };
 }
 
-describe("user-triggered Showcase context gating", () => {
-  it("hides schema and bundled skills from ordinary model requests", () => {
+describe("persistent-on-demand Showcase context gating", () => {
+  it("is absent from normal tool declarations and skill descriptions", () => {
     const { events, pi, prompt } = mockPi();
     pi.setActiveTools(["read", "bash", "edit", "showcase"]);
     events.get("session_start")!();
@@ -44,37 +48,64 @@ describe("user-triggered Showcase context gating", () => {
     const options = prompt();
     expect(options.selectedTools).toEqual(["read", "bash", "edit"]);
     expect(options.skills.map((skill) => skill.name)).toEqual(["other-skill"]);
-    expect(pi.getActiveTools()).not.toContain("showcase");
   });
 
-  it("/showcase <request> exposes one tool for the requested turn, then removes it", async () => {
-    const { events, commands, pi, messages, prompt } = mockPi();
-    await commands.get("showcase")!.handler("draw an API flow", { hasUI: false });
+  it("stays callable across MULTIPLE agent turns after /showcase", async () => {
+    const { events, pi, prompt, command } = mockPi();
+    await command("on");
+    for (let i = 0; i < 4; i++) {
+      const options = prompt();
+      expect(options.selectedTools).toContain("showcase");
+      expect(options.skills).toHaveLength(4);
+      expect(pi.getActiveTools()).toContain("showcase");
+      events.get("agent_end")?.();
+      expect(pi.getActiveTools()).toContain("showcase");
+    }
+  });
+
+  it("/showcase <request> sends a prompt without deactivating afterwards", async () => {
+    const { events, pi, messages, prompt, command } = mockPi();
+    await command("draw an API flow");
     expect(messages).toEqual(["Use the native showcase tool for this request: draw an API flow"]);
-    expect(pi.getActiveTools()).toContain("showcase");
-    const enabled = prompt();
-    expect(enabled.selectedTools).toContain("showcase");
-    expect(enabled.skills).toHaveLength(4);
-    events.get("agent_end")!();
-    expect(pi.getActiveTools()).toEqual(["read", "bash", "edit"]);
-    expect(prompt().skills.map((s) => s.name)).toEqual(["other-skill"]);
-  });
-
-  it("bare /showcase arms the next prompt; /showcase off and session switches disarm", async () => {
-    const { events, commands, pi, prompt } = mockPi();
-    await commands.get("showcase")!.handler("", { hasUI: false });
     expect(prompt().selectedTools).toContain("showcase");
-    await commands.get("showcase")!.handler("off", { hasUI: false });
-    expect(prompt().selectedTools).not.toContain("showcase");
-    await commands.get("showcase")!.handler("on", { hasUI: false });
-    events.get("session_start")!();
-    expect(pi.getActiveTools()).not.toContain("showcase");
+    events.get("agent_end")?.();
+    expect(prompt().selectedTools).toContain("showcase");
+    expect(pi.getActiveTools()).toContain("showcase");
   });
 
-  it("removes a later tool-manager reactivation from the live and prompt loadouts", () => {
-    const { pi, prompt } = mockPi();
+  it("/showcase off hides tool and skills on subsequent turns", async () => {
+    const { events, pi, prompt, command } = mockPi();
+    await command("");
+    events.get("agent_end")?.();
+    await command("off");
+    expect(pi.getActiveTools()).not.toContain("showcase");
+    // Simulates tools-manager adding every registered tool again before a turn.
     pi.setActiveTools(["read", "bash", "edit", "showcase"]);
     expect(prompt().selectedTools).not.toContain("showcase");
+    expect(prompt().skills.map((skill) => skill.name)).toEqual(["other-skill"]);
     expect(pi.getActiveTools()).not.toContain("showcase");
+  });
+
+  it("session changes reset opt-in, while status is non-mutating", async () => {
+    const { events, pi, prompt, command, notifications } = mockPi();
+    await command("on");
+    await command("status");
+    expect(notifications.at(-1)).toContain("active in model context");
+    events.get("session_start")!();
+    expect(pi.getActiveTools()).not.toContain("showcase");
+    expect(prompt().selectedTools).not.toContain("showcase");
+    await command("status");
+    expect(notifications.at(-1)).toContain("inactive (no model schema)");
+  });
+
+  it("reconciles an aggressive tools-manager without disabling other tools", async () => {
+    const { pi, prompt, command } = mockPi();
+    pi.setActiveTools(["read", "bash", "edit", "showcase", "grep"]);
+    expect(prompt().selectedTools).not.toContain("showcase");
+    expect(pi.getActiveTools()).toContain("grep");
+    await command("on");
+    pi.setActiveTools(["read", "bash", "edit", "grep"]);
+    expect(prompt().selectedTools).toContain("showcase");
+    expect(pi.getActiveTools()).toContain("grep");
   });
 });

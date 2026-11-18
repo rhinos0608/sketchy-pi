@@ -4,68 +4,77 @@ const TOOL = "showcase";
 const SKILLS = new Set(["showcase", "showcase-repo", "showcase-circuit"]);
 
 /**
- * Declare Sketchy's schema only for a user-requested Showcase turn.
- * An inactive *direct* tool is absent from Pi's LLM tool declarations, not
- * merely rejected by its executor. The skill index is filtered as well.
+ * Opt-in for the duration of the Pi session, not for just one agent turn.
+ * Only active direct tools are declared to the model. A registered but inactive
+ * direct tool cannot be discovered by tool_search (which indexes deferred tools).
  */
 export function registerShowcaseActivation(pi: ExtensionAPI): void {
-  let armed = false;
+  let enabled = false;
 
-  function syncTool(): void {
+  function syncTool(): boolean {
+    // /tools and other extensions can reconfigure the complete active set.
+    // Preserve every other tool; only change Showcase's presence.
     const current = pi.getActiveTools();
-    const next = current.filter((name) => name !== TOOL);
-    if (armed) next.push(TOOL);
-    if (current.length !== next.length || current.some((name, index) => name !== next[index])) {
-      pi.setActiveTools(next);
+    const alreadyActive = current.includes(TOOL);
+    // Do not rebuild the prompt or reorder tools when the desired state already holds.
+    if (alreadyActive !== enabled) {
+      pi.setActiveTools(enabled ? [...current, TOOL] : current.filter((name) => name !== TOOL));
     }
+    return pi.getActiveTools().includes(TOOL);
   }
 
   pi.on("session_start", () => {
-    armed = false;
+    // A new session is opt-in again; agent_end must NOT revoke the opt-in.
+    enabled = false;
     syncTool();
   });
 
   pi.on("before_agent_start", (event) => {
-    // Other extensions (including a tool manager) may have refreshed the list.
-    // Fix both the live LLM loadout and this request's constructed prompt.
-    syncTool();
+    // Pi's /tools manager may reactivate every registered tool on each turn.
+    // Reconcile after it, and edit the prompt for this specific request as well.
+    const active = syncTool();
     const options = event.systemPromptOptions;
-    const visible = armed && pi.getActiveTools().includes(TOOL);
-    options.selectedTools = [
-      ...options.selectedTools.filter((name) => name !== TOOL),
-      ...(visible ? [TOOL] : []),
-    ];
-    if (!visible) {
+    const shouldDeclare = enabled && active;
+    const isDeclared = options.selectedTools.includes(TOOL);
+    if (shouldDeclare && !isDeclared) {
+      options.selectedTools = [...options.selectedTools, TOOL];
+    } else if (!shouldDeclare && isDeclared) {
+      options.selectedTools = options.selectedTools.filter((name) => name !== TOOL);
+    }
+    if (!enabled || !active) {
       options.skills = options.skills.filter((skill) => !SKILLS.has(skill.name));
     }
   });
 
-  pi.on("agent_end", () => {
-    armed = false;
-    syncTool();
-  });
-
   pi.registerCommand("showcase", {
-    description: "Enable native Showcase for one agent turn; /showcase <request> draws immediately",
+    description: "Enable Showcase for this session; /showcase off disables, /showcase status checks",
     handler: async (args, ctx) => {
       const request = args.trim();
-      if (request === "off") {
-        armed = false;
-        syncTool();
-        if (ctx.hasUI) ctx.ui.notify("Showcase disabled.", "info");
+      if (request === "status") {
+        const registered = pi.getAllTools().some((tool) => tool.name === TOOL);
+        const declared = syncTool();
+        if (ctx.hasUI) ctx.ui.notify(
+          `Showcase: ${registered ? "registered" : "missing"}, ${enabled && declared ? "active in model context" : "inactive (no model schema)"}. ${enabled ? "Use /showcase off to disable." : "Use /showcase to enable."}`,
+          "info",
+        );
         return;
       }
-      armed = true;
-      syncTool();
-      if (!pi.getActiveTools().includes(TOOL)) {
-        armed = false;
-        if (ctx.hasUI) ctx.ui.notify("Showcase is excluded by Pi's active tool restrictions.", "warning");
+      if (request === "off") {
+        enabled = false;
+        syncTool();
+        if (ctx.hasUI) ctx.ui.notify("Showcase disabled; schema excluded from new agent turns.", "info");
+        return;
+      }
+      enabled = true;
+      if (!syncTool()) {
+        enabled = false;
+        if (ctx.hasUI) ctx.ui.notify("Showcase could not be enabled; check Pi's tool allowlist.", "warning");
         return;
       }
       if (request && request !== "on") {
         pi.sendUserMessage("Use the native showcase tool for this request: " + request);
       } else if (ctx.hasUI) {
-        ctx.ui.notify("Showcase armed for the next prompt only.", "info");
+        ctx.ui.notify("Showcase enabled for this session. /showcase off disables it.", "info");
       }
     },
   });

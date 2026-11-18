@@ -2,7 +2,7 @@
 
 This fork runs the original Sketchy scene parser, layout engine, part catalog, rasterizer and interactive HTML viewer **directly inside Pi**. It does not start, connect to or require an MCP server.
 
-Sketchy registers exactly **one** native Pi tool, **showcase**, but keeps it **out of the model's active tool list and system prompt by default**. `/showcase` enables it for one agent turn. Its action parameter groups the original Sketchy tool operations into one API; three packaged skills cover diagrams, repository architecture and circuits. Their skill metadata is also absent from ordinary agent prompts.
+Sketchy registers exactly **one** native Pi tool, **showcase**, but keeps it **out of the model's active tool list and system prompt by default**. `/showcase` enables it for the current Pi session until explicitly disabled. Its action parameter groups the original Sketchy tool operations into one API; three packaged skills cover diagrams, repository architecture and circuits. Their skill metadata is also absent from ordinary agent prompts.
 
 ## Install
 
@@ -21,7 +21,7 @@ To test only this extension from the checkout without modifying settings:
 
 ## Usage
 
-In interactive Pi, use `/showcase draw an API flow with a cache` to make a drawing immediately. Or enter `/showcase` by itself to arm the tool for your **next** regular prompt. It is automatically removed from model context when that agent turn ends. `/showcase off` disarms it without starting a turn. This removes the tool's full schema, prompt snippet, and packaged skill descriptions from unrelated requests; it does not merely block calls. Pi's `/tools` or CLI restrictions still take precedence if they prohibit the tool.
+In interactive Pi, use `/showcase draw an API flow with a cache` to enable the tool and draw immediately. Or enter `/showcase` by itself to enable it for the **rest of this Pi session**. It remains declared and callable across subsequent prompts, until `/showcase off` explicitly removes it from model context or a new session begins. `/showcase status` reports registered/active state without sending a model request. Before activation, its full schema, prompt snippet, and three skill descriptions are absent from model requests; this is not an execution-only block. Pi's `/tools` or CLI restrictions still take precedence if they prohibit the tool. `tool_search` only discovers `deferred`/`codemode` tools, not this direct tool; check `/showcase status` instead of expecting it to appear in `tool_search`.
 
 While activated, the agent can send the following parameters to the single `showcase` tool:
 
@@ -54,7 +54,7 @@ The ZIP is an optional portable skills bundle; native Pi package discovery uses 
 
 - src/pi/showcase.ts — native action dispatcher and controller; no MCP import.
 - pi/extension.ts — single tool registration, sequential scene execution and Pi terminal UI.
-- pi/activation.ts — command-driven, one-turn tool and skill-prompt activation. The native tool defaults to inactive.
+- pi/activation.ts — session-scoped, opt-in tool and skill-prompt activation, with explicit off/status commands. The native direct tool defaults to inactive.
 - pi/skills/ — Pi Agent Skills.
 - src/server.ts — original upstream MCP integration retained for non-Pi clients; not used by showcase.
 

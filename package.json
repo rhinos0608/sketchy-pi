@@ -1,7 +1,7 @@
 {
   "name": "@rhinos0608/sketchy-pi",
   "mcpName": "io.github.ddkbs/sketchy",
-  "version": "0.2.0-pi.3",
+  "version": "0.2.0-pi.4",
   "description": "Sketchy drawing engine with one native Pi showcase tool and packaged agent skills; upstream MCP support retained for non-Pi clients.",
   "type": "module",
   "license": "MIT",
